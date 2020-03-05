@@ -5,7 +5,6 @@ simple RSA implementation for python. Made for learning purposes...
 - samuel mignot
 """
 
-import binascii
 from Crypto.Util import number
 import numpy as np
 from functools import wraps
@@ -37,7 +36,6 @@ def encode_string(s):
 
 def decode_int(i):
     '''takes an int and returns its utf-8 string representation'''
-    #return binascii.unhexlify(format(i, 'x').encode('utf-8')).decode('utf-8')
     return ((i).to_bytes((i.bit_length()+7)//8, byteorder='big')).decode("utf-8")
 
 def generate_large_primes():
@@ -52,9 +50,8 @@ def totient_2p(p,q):
     '''calculate totient for multiple of two primes'''
     return (p-1)*(q-1)
 
-def encrypt(message, public_key):
+def encrypt(int_message, public_key):
     '''encrypt a message using public key'''
-    int_message = encode_string(message)
     print(f"int message: {int_message}")
     n, e = public_key.n, public_key.e
     encrypted_message = pow(int_message, e, n)
@@ -111,10 +108,8 @@ def main():
     print(f"private_key: {private_key}")
     print()
     message = input('what message do you want to encrypt? ').strip()
-    x = encode_string(message)
-    print(x)
-    print(decode_int(x))
-    encrypted_message = encrypt(message, public_key)
+    int_message = encode_string(message)
+    encrypted_message = encrypt(int_message, public_key)
     print()
     decrypted_message = decrypt(encrypted_message, private_key)
     print(f"decrypted message: {decrypt(encrypted_message, private_key)}")
