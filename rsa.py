@@ -17,7 +17,7 @@ PublicKey = namedtuple('PublicKey', ['n', 'e'])
 PrivateKey = namedtuple('PrivateKey', ['n', 'd'])
 
 # consts
-ENCRYPTION_LENGTH = 4 
+ENCRYPTION_LENGTH = 10
 e = 7
 
 def timed(f):
@@ -33,11 +33,12 @@ def timed(f):
 
 def encode_string(s):
     '''takes a string and returns its int representation'''
-    return int(binascii.hexlify(s.encode('utf-8')), 16)
+    return int.from_bytes(s.encode('utf-8'), byteorder='big')
 
 def decode_int(i):
     '''takes an int and returns its utf-8 string representation'''
-    return binascii.unhexlify(format(i, 'x').encode('utf-8')).decode('utf-8')
+    #return binascii.unhexlify(format(i, 'x').encode('utf-8')).decode('utf-8')
+    return ((i).to_bytes((i.bit_length()+7)//8, byteorder='big')).decode("utf-8")
 
 def generate_large_primes():
     '''generates a tuple of large primes (size is definited by encryption length'''
@@ -54,18 +55,15 @@ def totient_2p(p,q):
 def encrypt(message, public_key):
     '''encrypt a message using public key'''
     int_message = encode_string(message)
+    print(f"int message: {int_message}")
     n, e = public_key.n, public_key.e
     encrypted_message = pow(int_message, e, n)
     return encrypted_message
 
-def decrypt(message, private_key):
+def decrypt(int_message, private_key):
     '''decrypts a message using private and public key'''
-    int_message = encode_string(message)
-    print(int_message)
     n, d = private_key.n, private_key.d
     decrypted_message = pow(int_message, d, n)
-    print(decrypted_message)
-    print(int_message==decrypted_message)
     return decode_int(decrypted_message)
 
 
@@ -98,12 +96,6 @@ def generate_private_key(e, phi):
     '''uses phi, e, and n to generate the private key'''
     return egcd(e, phi)
 
-def ans1_encode(key):
-    return decoder_nat(key, asn1Spec=RSAPrivateKey())
-
-def ans1_encode_public(key):
-    pass
-
 def main():
     '''main function calculates large primes, public key and private key'''
     p, q = generate_large_primes()
@@ -112,15 +104,20 @@ def main():
     d = generate_private_key(e,phi)
     public_key = PublicKey(n=n, e=e)
     private_key = PrivateKey(n=n, d=d)
+    print(f"large primes: p={p}, q={q}")
+    print(f"phi: {phi}")
     print(f"generated the following keys with e={e} and RSA-{ENCRYPTION_LENGTH}: ")
     print(f"public_key: {public_key}")
     print(f"private_key: {private_key}")
     print()
-    message = input('what message do you want to encrypt?' )
+    message = input('what message do you want to encrypt? ').strip()
+    x = encode_string(message)
+    print(x)
+    print(decode_int(x))
     encrypted_message = encrypt(message, public_key)
-    print(f"encrypted message: {encrypted_message}")
     print()
-    print(f"decrypted message: {decrypt(message, private_key)}")
+    decrypted_message = decrypt(encrypted_message, private_key)
+    print(f"decrypted message: {decrypt(encrypted_message, private_key)}")
 
 if __name__ == '__main__':
     main()
