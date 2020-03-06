@@ -12,23 +12,13 @@ from time import time
 
 from collections import namedtuple
 
-PublicKey = namedtuple('PublicKey', ['n', 'e'])
-PrivateKey = namedtuple('PrivateKey', ['n', 'd'])
-
 # consts
-ENCRYPTION_LENGTH = 10
+encryption_length = 2048
 e = 7
 
-def timed(f):
-    '''timing helper'''
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        start = time()
-        result = f(*args, **kwargs)
-        end = time()
-        print(f"Elapsed time: {end-start}")
-        return result
-    return wrapper
+# key objects
+PublicKey = namedtuple('PublicKey', ['n', 'e'])
+PrivateKey = namedtuple('PrivateKey', ['n', 'd'])
 
 def encode_string(s):
     '''takes a string and returns its int representation'''
@@ -52,7 +42,6 @@ def totient_2p(p,q):
 
 def encrypt(int_message, public_key):
     '''encrypt a message using public key'''
-    print(f"int message: {int_message}")
     n, e = public_key.n, public_key.e
     encrypted_message = pow(int_message, e, n)
     return encrypted_message
@@ -64,10 +53,11 @@ def decrypt(int_message, private_key):
     return decode_int(decrypted_message)
 
 
-# @timed # test the speed of numpy vs egcd implementaitons
 def egcd(a, m):
+    '''calculate extended euclid algorithhm'''
     if np.gcd(a, m) != 1:
-        main() #rerun on fail
+        print('randomly selected primes not compatible. Please run again')
+        exit()
 
     u1, u2, u3 = 1, 0, a
     v1, v2, v3 = 0, 1, m
@@ -77,10 +67,11 @@ def egcd(a, m):
         v1, v2, v3, u1, u2, u3 = (u1 - q * v1), (u2 - q * v2), (u3 - q * v3), v1, v2, v3
     return u1 % m
 
-# @timed # test the speed of numpy vs egcd implementaitons
 def npegcd(a, m):
+    '''calculate extended euclid algorithhm with numpy arrays'''
     if np.gcd(a, m) != 1:
-        main() #rerun on fail
+        print('randomly selected primes not compatible. Please run again')
+        exit()
 
     arr = np.array([1, 0, a, 0, 1, m]).reshape(2,-1)
 
@@ -93,6 +84,31 @@ def generate_private_key(e, phi):
     '''uses phi, e, and n to generate the private key'''
     return egcd(e, phi)
 
+def print_variable_details(p, q, phi, e, encryption_length, public_key, private_key):
+    '''prints some basic details about the intermediary encrpytion variables and keys'''
+    print(f"large primes: p={p}, q={q}")
+    print(f"phi: {phi}")
+    print(f"generated the following keys with e={e} and RSA-{encrpytion_length}: ")
+    print(f"public_key: {public_key}")
+    print(f"private_key: {private_key}")
+    print()
+
+def get_user_message(n):
+    '''
+    Gets a message as input from the user and verifies that the message is shorter than n (which is an encryption requirement).
+    For messages larger than n, normal encryption methods use RSA to generate a symetric key.
+    '''
+    int_message = pow(10, len(str(n))+1)
+    while len(str(int_message)) > len(str(n)):
+        message = input('what message do you want to encrypt? ').strip()
+        int_message = encode_string(message)
+        if len(str(int_message)) > len(str(n)):
+            print(f"please enter a shorter message.", end="")
+            print(f"Your message currently encodes to a length of {len(str(int_message))}, but it must shorter than {len(str(n))}")
+    print(f"int message: {int_message}")
+    return int_message
+
+
 def main():
     '''main function calculates large primes, public key and private key'''
     p, q = generate_large_primes()
@@ -101,16 +117,14 @@ def main():
     d = generate_private_key(e,phi)
     public_key = PublicKey(n=n, e=e)
     private_key = PrivateKey(n=n, d=d)
-    print(f"large primes: p={p}, q={q}")
-    print(f"phi: {phi}")
-    print(f"generated the following keys with e={e} and RSA-{ENCRYPTION_LENGTH}: ")
-    print(f"public_key: {public_key}")
-    print(f"private_key: {private_key}")
-    print()
-    message = input('what message do you want to encrypt? ').strip()
-    int_message = encode_string(message)
+
+    print_details(p, q, phi, e, encryption_length, public_key, private_key)
+
+    int_message = get_user_message(n)
+
     encrypted_message = encrypt(int_message, public_key)
-    print()
+    print(f"encrypted message: {encrypted_message}")
+
     decrypted_message = decrypt(encrypted_message, private_key)
     print(f"decrypted message: {decrypt(encrypted_message, private_key)}")
 
