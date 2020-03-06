@@ -15,31 +15,38 @@ from collections import namedtuple
 PublicKey = namedtuple('PublicKey', ['n', 'e'])
 PrivateKey = namedtuple('PrivateKey', ['n', 'd'])
 
+
 def encode_string(s):
     '''takes a string and returns its int representation'''
     return int.from_bytes(s.encode('utf-8'), byteorder='big')
+
 
 def decode_int(i):
     '''takes an int and returns its utf-8 string representation'''
     return ((i).to_bytes((i.bit_length()+7)//8, byteorder='big')).decode("utf-8")
 
+
 def generate_large_primes(encryption_length):
     '''generates a tuple of large primes (size is definited by encryption length'''
     return tuple(number.getPrime(encryption_length) for i in range(2))
+
 
 def naive_totient(n):
     '''calculate totient very naively'''
     return sum([int(np.gcd(x, n)==1) for x in range(1, n+1)])
 
+
 def totient_2p(p,q):
     '''calculate totient for multiple of two primes'''
     return (p-1)*(q-1)
+
 
 def encrypt(int_message, public_key):
     '''encrypt a message using public key'''
     n, e = public_key.n, public_key.e
     encrypted_message = pow(int_message, e, n)
     return encrypted_message
+
 
 def decrypt(int_message, private_key):
     '''decrypts a message using private and public key'''
@@ -53,31 +60,30 @@ def egcd(a, m):
     if np.gcd(a, m) != 1:
         print('randomly selected primes not compatible. Please run again')
         exit()
-
     u1, u2, u3 = 1, 0, a
     v1, v2, v3 = 0, 1, m
-
     while v3 != 0:
         q = u3 // v3
         v1, v2, v3, u1, u2, u3 = (u1 - q * v1), (u2 - q * v2), (u3 - q * v3), v1, v2, v3
     return u1 % m
+
 
 def npegcd(a, m):
     '''calculate extended euclid algorithhm with numpy arrays'''
     if np.gcd(a, m) != 1:
         print('randomly selected primes not compatible. Please run again')
         exit()
-
     arr = np.array([1, 0, a, 0, 1, m]).reshape(2,-1)
-
     while arr[1,2] != 0:
         q = arr[0,2] // arr[1,2]
         arr = np.vstack((arr[1], arr[0,:]-(q*arr[1,:])))
     return arr[0,0]%m
 
+
 def generate_private_key(e, phi):
     '''uses phi, e, and n to generate the private key'''
     return egcd(e, phi)
+
 
 def print_variable_details(p, q, phi, e, encryption_length, public_key, private_key):
     '''prints some basic details about the intermediary encrpytion variables and keys'''
@@ -87,6 +93,7 @@ def print_variable_details(p, q, phi, e, encryption_length, public_key, private_
     print(f"public_key: {public_key}")
     print(f"private_key: {private_key}")
     print()
+
 
 def get_user_message(n):
     '''
@@ -123,12 +130,11 @@ def main(encryption_length, e):
     decrypted_message = decrypt(encrypted_message, private_key)
     print(f"decrypted message: {decrypt(encrypted_message, private_key)}")
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument("-e", type=int,
-                    default=3, choices={3, 5, 17, 257, 65537}, help="encryption exponent. Default value is 3.")
-    parser.add_argument("-l", type=int,
-                    default=2048, help="encryption length. Default value is 2048.")
-
+    parser.add_argument("-e", type=int, default=3, choices={3, 5, 17, 257, 65537}, help="encryption exponent. Default value is 3.")
+    parser.add_argument("-l", type=int, default=2048, help="encryption length. Default value is 2048.")
     args = parser.parse_args()
+
     main(args.l, args.e)
