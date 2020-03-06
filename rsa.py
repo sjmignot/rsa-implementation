@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 simple RSA implementation for python. Made for learning purposes...
@@ -7,16 +8,10 @@ simple RSA implementation for python. Made for learning purposes...
 
 from Crypto.Util import number
 import numpy as np
-from functools import wraps
-from time import time
-
-from collections import namedtuple
-
-# consts
-encryption_length = 2048
-e = 7
+import argparse
 
 # key objects
+from collections import namedtuple
 PublicKey = namedtuple('PublicKey', ['n', 'e'])
 PrivateKey = namedtuple('PrivateKey', ['n', 'd'])
 
@@ -28,9 +23,9 @@ def decode_int(i):
     '''takes an int and returns its utf-8 string representation'''
     return ((i).to_bytes((i.bit_length()+7)//8, byteorder='big')).decode("utf-8")
 
-def generate_large_primes():
+def generate_large_primes(encryption_length):
     '''generates a tuple of large primes (size is definited by encryption length'''
-    return tuple(number.getPrime(ENCRYPTION_LENGTH) for i in range(2))
+    return tuple(number.getPrime(encryption_length) for i in range(2))
 
 def naive_totient(n):
     '''calculate totient very naively'''
@@ -88,7 +83,7 @@ def print_variable_details(p, q, phi, e, encryption_length, public_key, private_
     '''prints some basic details about the intermediary encrpytion variables and keys'''
     print(f"large primes: p={p}, q={q}")
     print(f"phi: {phi}")
-    print(f"generated the following keys with e={e} and RSA-{encrpytion_length}: ")
+    print(f"generated the following keys with e={e} and RSA-{encryption_length}: ")
     print(f"public_key: {public_key}")
     print(f"private_key: {private_key}")
     print()
@@ -109,16 +104,16 @@ def get_user_message(n):
     return int_message
 
 
-def main():
+def main(encryption_length, e):
     '''main function calculates large primes, public key and private key'''
-    p, q = generate_large_primes()
+    p, q = generate_large_primes(encryption_length)
     n =  p*q
     phi = totient_2p(p, q)
     d = generate_private_key(e,phi)
     public_key = PublicKey(n=n, e=e)
     private_key = PrivateKey(n=n, d=d)
 
-    print_details(p, q, phi, e, encryption_length, public_key, private_key)
+    print_variable_details(p, q, phi, e, encryption_length, public_key, private_key)
 
     int_message = get_user_message(n)
 
@@ -129,4 +124,11 @@ def main():
     print(f"decrypted message: {decrypt(encrypted_message, private_key)}")
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument("-e", type=int,
+                    default=3, choices={3, 5, 17, 257, 65537}, help="encryption exponent. Default value is 3.")
+    parser.add_argument("-l", type=int,
+                    default=2048, help="encryption length. Default value is 2048.")
+
+    args = parser.parse_args()
+    main(args.l, args.e)
